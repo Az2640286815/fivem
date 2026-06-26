@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>满天星 FiveM 角色扮演服务器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            background: #050018;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        /* 星空粒子背景 */
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+        /* 导航栏 */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 8%;
+            background: rgba(10, 0, 30, 0.6);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(160, 120, 255, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+            color: #e0c0ff;
+            text-shadow: 0 0 12px #b47dff;
+        }
+        .nav-links a {
+            color: #e8d8ff;
+            text-decoration: none;
+            margin-left: 28px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .nav-links a:hover {
+            color: #fff;
+            text-shadow: 0 0 8px #d8b8ff;
+        }
+        .discord-btn {
+            background: #5878ff;
+            padding: 9px 20px;
+            border-radius: 30px;
+        }
+        .discord-btn:hover {
+            background: #7090ff;
+        }
+        /* 首页横幅 */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .hero h1 {
+            font-size: 56px;
+            margin-bottom: 16px;
+            color: #f0e0ff;
+            text-shadow: 0 0 20px #a86dff;
+        }
+        .hero p {
+            font-size: 20px;
+            color: #d8c0ff;
+            max-width: 700px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+        .server-info {
+            display: flex;
+            gap: 40px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .info-card {
+            background: rgba(30, 10, 60, 0.55);
+            padding: 16px 30px;
+            border-radius: 14px;
+            border: 1px solid #9d70ff66;
+        }
+        .info-card h3 {
+            font-size: 32px;
+            color: #fff;
+        }
+        .info-card span {
+            color: #c9b0ff;
+            font-size: 15px;
+        }
+        .connect-btn {
+            padding: 14px 42px;
+            background: linear-gradient(135deg, #9254ff, #5922cc);
+            border: none;
+            border-radius: 35px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        .connect-btn:hover {
+            box-shadow: 0 0 22px #9d68ff;
+            transform: translateY(-3px);
+        }
+        /* 通用区块 */
+        section {
+            padding: 80px 8%;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 60px;
+            color: #e6d0ff;
+            text-shadow: 0 0 10px #a066ff;
+        }
+        /* 服务器特色 */
+        .feature-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        .feature-card {
+            background: rgba(22, 5, 48, 0.6);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #8c5cff44;
+            transition: 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: #b080ff;
+            box-shadow: 0 0 18px #7c44ff40;
+        }
+        .feature-card h4 {
+            font-size: 22px;
+            margin-bottom: 14px;
+            color: #e4d0ff;
+        }
+        .feature-card p {
+            color: #c8b0ff;
+            line-height: 1.6;
+        }
+        /* 管理团队卡片样式 */
+        .staff-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 26px;
+        }
+        .staff-card {
+            text-align: center;
+            background: rgba(25, 8, 52, 0.8);
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid #9060ff60;
+        }
+        /* 统一110px圆形头像容器 */
+        .staff-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #6030bb;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            color: white;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .staff-card h4 {
+            font-size: 19px;
+            margin-bottom: 6px;
+            color: #ffffff;
+        }
+        .staff-card span {
+            color: #c8b0ff;
+            font-size: 14px;
+        }
+        /* 服务器规则 */
+        .rule-box {
+            background: rgba(20, 6, 45, 0.6);
+            padding: 36px;
+            border-radius: 16px;
+            border: 1px solid #8854ff50;
+        }
+        .rule-box li {
+            color: #d4c0ff;
+            margin: 14px 0;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        /* 底部 */
+        footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid #7040ff33;
+            color: #a888ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- 星空背景画布 -->
+    <canvas id="starCanvas"></canvas>
+
+    <!-- 导航栏 -->
+    <nav>
+        <div class="logo">✦ 满天星 FiveM</div>
+        <div class="nav-links">
+            <a href="#home">首页</a>
+            <a href="#feature">服务器特色</a>
+            <a href="#staff">管理团队</a>
+            <a href="#rule">服务器规则</a>
+            <a href="https://qm.qq.com/q/X5Yto6R7Wy" target="_blank" class="discord-btn">进群连接</a>
+        </div>
+    </nav>
+
+    <!-- 首页横幅 -->
+    <section id="home" class="hero">
+        <h1>满天星 角色扮演服务器</h1>
+        <p>星空主题国风二次元RP服，完善经济系统、职业玩法、自定义载具，低延迟稳定服务器，欢迎所有玩家加入满天星，共筑属于你的都市故事</p>
+        <div class="server-info">
+            <div class="info-card">
+                <h3>128</h3>
+                <span>最大在线人数</span>
+            </div>
+            <div class="info-card">
+                <h3>ESX</h3>
+                <span>游戏框架</span>
+            </div>
+            <div class="info-card">
+                <h3>0.0ms</h3>
+                <span>国内低延迟</span>
+            </div>
+        </div>
+        <button class="connect-btn" onclick="alert('服务器直连码：vq3pegk')">一键连接服务器</button>
+    </section>
+
+    <!-- 服务器特色 -->
+    <section id="feature">
+        <h2 class="section-title">服务器特色</h2>
+        <div class="feature-wrap">
+            <div class="feature-card">
+                <h4>星空二次元风格</h4>
+                <p>全服星空动态加载界面、二次元角色UI、霓虹都市地图，适配喜欢动漫、软萌风格玩家</p>
+            </div>
+            <div class="feature-card">
+                <h4>完善经济RP体系</h4>
+                <p>几十种职业可选：警察、医生、外卖、汽修、商人，自主开店、房产、载具收藏系统</p>
+            </div>
+            <div class="feature-card">
+                <h4>免费优质模组</h4>
+                <p>上千款免费载具、武器、服饰，无付费碾压道具，公平游戏环境</p>
+            </div>
+            <div class="feature-card">
+                <h4>稳定运维支持</h4>
+                <p>7×16小时在线管理，快速处理纠纷、BUG反馈，定期更新活动与新玩法</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 管理团队 完整排序 -->
+    <section id="staff">
+        <h2 class="section-title">服务器管理团队</h2>
+        <div class="staff-wrap">
+            <!-- 1.可乐 腐竹 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e95d56b497.png')"></div>
+                <h4>可乐</h4>
+                <span>腐竹</span>
+            </div>
+            <!-- 2.小游 运营策划 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEWJYJqPpVXzqTZyoTDxP1U4Eq6xiOMXQACwy0AAk05-VVOEMCd91UY4DwE.png')"></div>
+                <h4>小游</h4>
+                <span>运营策划</span>
+            </div>
+            <!-- 3.穆萨 总管理 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e95cd17089.png')"></div>
+                <h4>穆萨</h4>
+                <span>总管理</span>
+            </div>
+            <!-- 4.杨俊俊 合法管理 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e98b4ed602.png')"></div>
+                <h4>杨俊俊</h4>
+                <span>合法管理</span>
+            </div>
+            <!-- 5.阿龙 非法管理 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e95cd23c8a.png')"></div>
+                <h4>阿龙</h4>
+                <span>非法管理</span>
+            </div>
+            <!-- 6.飞机✈️ 技术支持 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e98bc84e94.png')"></div>
+                <h4>飞机✈️</h4>
+                <span>技术支持</span>
+            </div>
+            <!-- 7.周麟寒 综合管理 -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260626/6a3e98e1408de.png')"></div>
+                <h4>周麟寒</h4>
+                <span>综合管理</span>
+            </div>
+            <!-- 8.miss 巡查管理（已绑定指定头像） -->
+            <div class="staff-card">
+                <div class="staff-avatar" style="background-image: url('https://s1.img-e.com/20260627/6a3ea43e76685.jpg')"></div>
+                <h4>miss</h4>
+                <span>巡查管理</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 服务器规则 -->
+    <section id="rule">
+        <h2 class="section-title">服务器基础规则</h2>
+        <div class="rule-box">
+            <li>1. 禁止外挂、透视、加速、瞬移等作弊工具，一经发现永久封禁</li>
+            <li>2. 禁止恶意骚扰、辱骂、人身攻击其他玩家，文明RP交流</li>
+            <li>3. 禁止跨RP暴力，无合理剧情不得随意击杀、抢劫路人</li>
+            <li>4. 禁止私下现金交易账号、游戏资产，被骗服务器概不负责</li>
+            <li>5. 遵守社群规范，广告、引战内容会直接移出社群</li>
+            <li>6. 遇到BUG、管理员不公可在社群反馈，禁止私下闹事刷屏</li>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>满天星FiveM角色扮演服务器 © 2026 所有权利保留 | 服务器直连码：vq3pegk | QQ群：https://qm.qq.com/q/X5Yto6R7Wy</p>
+    </footer>
+
+    <!-- 星空粒子动画JS -->
+    <script>
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let stars = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            createStars();
+        }
+
+        function createStars() {
+            stars = [];
+            const starCount = Math.floor(width * height / 2800);
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 1.3 + 0.2,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.008
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, width, height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(230, 210, 255, ${star.opacity})`;
+                ctx.fill();
+                star.opacity += star.speed;
+                if (star.opacity > 1 || star.opacity < 0) star.speed = -star.speed;
+            });
+            requestAnimationFrame(drawStars);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        drawStars();
+    </script>
+</body>
+</html>
